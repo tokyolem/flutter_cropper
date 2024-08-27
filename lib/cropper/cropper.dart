@@ -104,6 +104,8 @@ class _CropperState extends State<Cropper>
     return verticalInsets;
   }
 
+  // TODO(tokyolem): Handle zoom double tap.
+  // TODO(tokyolem): Handle insets.
   void _handleDoubleTap(TapDownDetails details) {
     final tapPosition = details.localPosition;
     final currentScale =

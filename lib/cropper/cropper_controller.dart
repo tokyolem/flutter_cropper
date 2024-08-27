@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
@@ -44,6 +45,22 @@ final class CropperController extends ChangeNotifier implements CropperSize {
     super.dispose();
 
     _transformationController.dispose();
+  }
+
+  void resetCrop({
+    VoidCallback? onResetStart,
+    VoidCallback? onResetEnd,
+  }) {
+    onResetStart?.call();
+
+    File(_croppedImageFile!.path)
+        .openSync(mode: FileMode.append)
+        .truncateSync(0);
+
+    _croppedImageFile = null;
+    setDefaultTranslations();
+
+    onResetEnd?.call();
   }
 
   Matrix4 setDefaultTranslations() {
@@ -105,8 +122,6 @@ final class CropperController extends ChangeNotifier implements CropperSize {
       onCropEnd?.call();
       return null;
     }
-
-    _imageFile = croppedFile;
 
     notifyListeners();
     onCropEnd?.call();
@@ -213,18 +228,22 @@ final class _CropIsolate {
 
   Future<File?> _encodeImage(String imagePath, img.Image croppedImage) async {
     final imageExtension = imagePath.split('.').last.toLowerCase();
+    final randImageUnique = Random().nextInt(2147483647);
 
     if (imageExtension == 'heic' || imageExtension == 'heif') {
       final convertedPath = imagePath.replaceAll(
         '.$imageExtension',
-        '_cropped.jpeg',
+        '_cropped$randImageUnique.jpeg',
       );
 
       return _compressHeifHeicImage(imagePath, convertedPath);
     }
 
     final croppedFile = File(
-      imagePath.replaceAll('.$imageExtension', '_cropped.$imageExtension'),
+      imagePath.replaceAll(
+        '.$imageExtension',
+        '_cropped$randImageUnique.$imageExtension',
+      ),
     );
 
     return switch (imageExtension) {
